@@ -1586,7 +1586,11 @@ open class TerminalView: UIScrollView, UITextInputTraits, UIKeyInput, UIScrollVi
                 break
                 
             case .keyboardTab:
-                data = .bytes ([9])
+                if key.modifierFlags.contains (.shift) {
+                    data = .bytes ([0x1b, 0x5b, 0x5a]) // ESC [ Z = backtab
+                } else {
+                    data = .bytes ([9])
+                }
 
             case .keyboardF1:
                 data = .bytes (EscapeSequences.cmdF [0])
@@ -1616,7 +1620,14 @@ open class TerminalView: UIScrollView, UITextInputTraits, UIKeyInput, UIScrollVi
                 break
             case .keyboardPause, .keyboardStop, .keyboardMute, .keyboardVolumeUp, .keyboardVolumeDown:
                 break
-                
+
+            case .keyboardReturnOrEnter, .keypadEnter:
+                if key.modifierFlags.contains (.shift) {
+                    // Kitty keyboard protocol: CSI 13 ; 2 u (Shift+Enter)
+                    data = .bytes ([0x1b, 0x5b, 0x31, 0x33, 0x3b, 0x32, 0x75])
+                }
+                // Unmodified Enter falls through to insertText via super.pressesBegan
+
             default:
                 if key.modifierFlags.contains ([.alternate, .command]) && key.charactersIgnoringModifiers == "o" {
                     optionAsMetaKey.toggle()
