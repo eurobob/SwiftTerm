@@ -1117,6 +1117,10 @@ open class TerminalView: UIScrollView, UITextInputTraits, UIKeyInput, UIScrollVi
     open func scrolled(source terminal: Terminal, yDisp: Int) {
         //XselectionView.notifyScrolled(source: terminal)
         updateScroller()
+        // Request redraw in the same frame as the contentOffset change.
+        // Without this, the viewport shifts one frame before the redraw,
+        // causing a visible flicker (old bitmap shown at new offset).
+        setNeedsDisplay(bounds)
         terminalDelegate?.scrolled(source: self, position: scrollPosition)
     }
     
