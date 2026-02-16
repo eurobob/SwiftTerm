@@ -251,7 +251,7 @@ open class TerminalView: UIScrollView, UITextInputTraits, UIKeyInput, UIScrollVi
           
     func setup()
     {
-        showsHorizontalScrollIndicator = true
+        showsHorizontalScrollIndicator = false
         indicatorStyle = .white
         
         setupKeyboardButtonColors()
@@ -1128,12 +1128,18 @@ open class TerminalView: UIScrollView, UITextInputTraits, UIKeyInput, UIScrollVi
     func updateScroller ()
     {
         let displayBuffer = terminal.displayBuffer
-        contentSize = CGSize (width: CGFloat (displayBuffer.cols) * cellDimension.width,
-                              height: CGFloat (displayBuffer.lines.count) * cellDimension.height)
-        //contentOffset = CGPoint (x: 0, y: CGFloat (displayBuffer.lines.count-displayBuffer.rows)*cellDimension.height)
-        contentOffset = CGPoint (x: 0, y: CGFloat (displayBuffer.lines.count-displayBuffer.rows)*cellDimension.height)
-        //Xscroller.doubleValue = scrollPosition
-        //Xscroller.knobProportion = scrollThumbsize
+        let newContentHeight = CGFloat (displayBuffer.lines.count) * cellDimension.height
+        let newContentSize = CGSize (width: frame.width,
+                                     height: max(newContentHeight, frame.height))
+        let newOffsetY = max(newContentHeight - frame.height, 0)
+
+        // Suppress implicit Core Animation transitions on scroll view changes
+        UIView.performWithoutAnimation {
+            if contentSize != newContentSize {
+                contentSize = newContentSize
+            }
+            contentOffset = CGPoint (x: 0, y: newOffsetY)
+        }
     }
     
     var userScrolling = false
