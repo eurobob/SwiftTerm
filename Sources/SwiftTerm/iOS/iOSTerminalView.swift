@@ -1132,17 +1132,28 @@ open class TerminalView: UIScrollView, UITextInputTraits, UIKeyInput, UIScrollVi
     func updateScroller ()
     {
         let displayBuffer = terminal.displayBuffer
-        let newContentHeight = CGFloat (displayBuffer.lines.count) * cellDimension.height
+        let rows = displayBuffer.rows
+        let lines = displayBuffer.lines.count
+
+        // Align contentOffset to cell boundaries so rows are never partially
+        // cut off.  The terminal area is `rows * cellHeight` which may be less
+        // than `frame.height`; the remainder (unusedSpace) stays at the bottom.
+        let effectiveHeight = CGFloat (rows) * cellDimension.height
+        let unusedSpace = max(frame.height - effectiveHeight, 0)
+        let rawContentHeight = CGFloat (lines) * cellDimension.height
+        let newContentHeight = rawContentHeight + unusedSpace
         let newContentSize = CGSize (width: frame.width,
                                      height: max(newContentHeight, frame.height))
-        let newOffsetY = max(newContentHeight - frame.height, 0)
+        // Offset is always a multiple of cellHeight — no fractional-row shifting
+        let newOffsetY = max(CGFloat (lines - rows) * cellDimension.height, 0)
 
-        // Suppress implicit Core Animation transitions on scroll view changes
         UIView.performWithoutAnimation {
             if contentSize != newContentSize {
                 contentSize = newContentSize
             }
-            contentOffset = CGPoint (x: 0, y: newOffsetY)
+            if abs(contentOffset.y - newOffsetY) > 0.5 {
+                contentOffset = CGPoint (x: 0, y: newOffsetY)
+            }
         }
     }
     
